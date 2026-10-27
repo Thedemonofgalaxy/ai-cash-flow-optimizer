@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function initApp() {
     loadLocalStore();
+    updateModelBadge();
 
     // Check if backend API is reachable
     try {
@@ -685,3 +686,590 @@ function resetDefaults() {
     renderForecast();
     showToast("Reset to default ₹ INR cash flow model!");
 }
+
+// =====================================================================
+// AI Agentic War Room & CFO Co-Pilot Controller (₹ INR)
+// =====================================================================
+
+let currentAgentArtifacts = [];
+let cfoChatHistory = [];
+
+function switchWarRoomTab(tab) {
+    const btnTrace = document.getElementById('tab-btn-trace');
+    const btnDrafts = document.getElementById('tab-btn-drafts');
+    const panelTrace = document.getElementById('warroom-panel-trace');
+    const panelDrafts = document.getElementById('warroom-panel-drafts');
+
+    if (tab === 'trace') {
+        btnTrace.className = "px-3 py-1 rounded-md text-xs font-bold bg-indigo-600/20 text-indigo-400 border border-indigo-500/30";
+        btnDrafts.className = "px-3 py-1 rounded-md text-xs font-semibold text-slate-400 hover:text-slate-200";
+        panelTrace.classList.remove('hidden');
+        panelDrafts.classList.add('hidden');
+    } else {
+        btnDrafts.className = "px-3 py-1 rounded-md text-xs font-bold bg-indigo-600/20 text-indigo-400 border border-indigo-500/30";
+        btnTrace.className = "px-3 py-1 rounded-md text-xs font-semibold text-slate-400 hover:text-slate-200";
+        panelDrafts.classList.remove('hidden');
+        panelTrace.classList.add('hidden');
+    }
+}
+
+// Model Configuration Modal
+function openModelConfigModal() {
+    const modal = document.getElementById('modal-model-config');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    const savedProvider = localStorage.getItem('cashpulse_ai_provider') || 'local';
+    const radios = document.getElementsByName('ai-provider');
+    radios.forEach(r => {
+        if (r.value === savedProvider) r.checked = true;
+    });
+
+    const apiKey = localStorage.getItem('cashpulse_ai_key') || '';
+    const keyInput = document.getElementById('input-api-key');
+    if (keyInput) keyInput.value = apiKey;
+}
+
+function closeModelConfigModal() {
+    const modal = document.getElementById('modal-model-config');
+    if (modal) modal.classList.add('hidden');
+}
+
+function toggleApiKeyVisibility() {
+    const input = document.getElementById('input-api-key');
+    const icon = document.getElementById('icon-api-eye');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'fa-solid fa-eye';
+    }
+}
+
+function handleSaveModelConfig(e) {
+    e.preventDefault();
+    const radios = document.getElementsByName('ai-provider');
+    let selectedProvider = 'local';
+    radios.forEach(r => {
+        if (r.checked) selectedProvider = r.value;
+    });
+
+    const key = document.getElementById('input-api-key').value.trim();
+    localStorage.setItem('cashpulse_ai_provider', selectedProvider);
+    if (key) {
+        localStorage.setItem('cashpulse_ai_key', key);
+    } else {
+        localStorage.removeItem('cashpulse_ai_key');
+    }
+
+    updateModelBadge();
+    closeModelConfigModal();
+    showToast(`AI Model set to: ${getModelDisplayName(selectedProvider)}`);
+}
+
+function getModelDisplayName(provider) {
+    if (provider === 'openai') return 'OpenAI (GPT-4o)';
+    if (provider === 'gemini') return 'Google Gemini 1.5';
+    return 'Local Heuristic AI';
+}
+
+function updateModelBadge() {
+    const provider = localStorage.getItem('cashpulse_ai_provider') || 'local';
+    const badgeName = document.getElementById('badge-model-name');
+    if (badgeName) {
+        badgeName.innerText = getModelDisplayName(provider);
+    }
+}
+
+// Multi-Agent Autonomous Optimization
+async function runAgenticOptimization() {
+    const btn = document.getElementById('btn-run-agents');
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Agents Reasoning...`;
+    btn.disabled = true;
+
+    // Visual state updates across agent cards
+    setAgentStatus('auditor', 'RUNNING', 'text-amber-400');
+    setAgentStatus('receivables', 'QUEUED', 'text-slate-400');
+    setAgentStatus('payables', 'QUEUED', 'text-slate-400');
+    setAgentStatus('cfo', 'QUEUED', 'text-slate-400');
+
+    const provider = localStorage.getItem('cashpulse_ai_provider') || 'local';
+    const apiKey = localStorage.getItem('cashpulse_ai_key') || null;
+
+    try {
+        let report = null;
+
+        if (!state.isBrowserMode) {
+            try {
+                const res = await fetch('/api/agents/optimize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        provider: provider,
+                        api_key: apiKey,
+                        custom_cash: state.currentCash,
+                        custom_buffer: state.safetyBuffer
+                    }),
+                    signal: AbortSignal.timeout(6000)
+                });
+                if (res.ok) {
+                    report = await res.json();
+                }
+            } catch (err) {
+                console.warn("Backend optimization call failed, falling back to client agentic runtime", err);
+            }
+        }
+
+        // Fallback client-side agentic runtime for GitHub Pages
+        if (!report) {
+            await simulateAgentProgress();
+            report = runClientSideAgenticOptimization();
+        } else {
+            await simulateAgentProgress();
+        }
+
+        renderAgentResults(report);
+        showToast(`Multi-Agent Run Complete: ${formatINR(report.total_cash_relief_inr)} Liquidity Unlocked!`);
+
+    } catch (e) {
+        console.error("Agent run failed:", e);
+        showToast("Agent run encountered an issue.");
+    } finally {
+        btn.innerHTML = origHtml;
+        btn.disabled = false;
+        setAgentStatus('auditor', 'DONE', 'text-emerald-400');
+        setAgentStatus('receivables', 'DONE', 'text-emerald-400');
+        setAgentStatus('payables', 'DONE', 'text-emerald-400');
+        setAgentStatus('cfo', 'DONE', 'text-indigo-400');
+    }
+}
+
+function setAgentStatus(agent, text, colorClass) {
+    const el = document.getElementById(`status-agent-${agent}`);
+    if (el) {
+        el.innerText = text;
+        el.className = `text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 ${colorClass}`;
+    }
+}
+
+async function simulateAgentProgress() {
+    setAgentStatus('auditor', 'ACTIVE', 'text-rose-400');
+    await new Promise(r => setTimeout(r, 200));
+    setAgentStatus('auditor', 'DONE', 'text-emerald-400');
+
+    setAgentStatus('receivables', 'ACTIVE', 'text-emerald-400');
+    await new Promise(r => setTimeout(r, 200));
+    setAgentStatus('receivables', 'DONE', 'text-emerald-400');
+
+    setAgentStatus('payables', 'ACTIVE', 'text-amber-400');
+    await new Promise(r => setTimeout(r, 200));
+    setAgentStatus('payables', 'DONE', 'text-emerald-400');
+
+    setAgentStatus('cfo', 'SYNTHESIZING', 'text-indigo-400');
+    await new Promise(r => setTimeout(r, 200));
+}
+
+// Client-side agent runtime mirroring Python framework for GitHub Pages
+function runClientSideAgenticOptimization() {
+    const currentCash = state.currentCash;
+    const buffer = state.safetyBuffer;
+
+    // 1. Auditor logic
+    const lowestBal = state.report ? state.report.projected_lowest_balance : 44000;
+    const isBreach = lowestBal < buffer;
+    const deficit = Math.max(0, buffer - lowestBal);
+
+    // 2. Receivables logic (2% early discount)
+    const largeInflows = state.inflows.filter(i => i.amount >= 100000);
+    const accelCandidates = largeInflows.map(i => ({
+        id: i.id,
+        source: i.source,
+        invoice_amount_inr: i.amount,
+        proposed_discount_pct: 2.0,
+        discount_cost_inr: Math.round(i.amount * 0.02),
+        net_accelerated_cash_inr: Math.round(i.amount * 0.98),
+        due_date: i.due_date
+    }));
+    const totalAccelerated = accelCandidates.reduce((s, c) => s + c.net_accelerated_cash_inr, 0);
+
+    // 3. Payables logic (+14d vendor deferral & 15% trim)
+    const deferrableOutflows = state.outflows.filter(o => 
+        o.category !== 'Payroll' && !o.recipient.toLowerCase().includes('salary') && o.category !== 'Taxes' && o.can_defer_days > 0
+    );
+    const totalDeferred = deferrableOutflows.reduce((s, o) => s + o.amount, 0);
+
+    const discretionary = state.outflows.filter(o => !o.is_essential);
+    const totalTrimmed = Math.round(discretionary.reduce((s, o) => s + o.amount, 0) * 0.15);
+
+    const totalRelief = totalAccelerated + totalDeferred + totalTrimmed;
+    const improvedLowest = Math.round(lowestBal + totalDeferred + (totalAccelerated * 0.85));
+
+    // Master actions
+    const actions = [
+        {
+            priority: 1,
+            title: "Reschedule Flexible Hardware & Vendor Bills (+14 Days)",
+            impact_inr: totalDeferred,
+            category: "OUTFLOW_DEFERRAL",
+            summary: `Preserves ${formatINR(totalDeferred)} without impacting core team payroll.`
+        },
+        {
+            priority: 2,
+            title: "Dispatch 2% Early-Settlement Discount to Enterprise Debtors",
+            impact_inr: totalAccelerated,
+            category: "INFLOW_ACCELERATION",
+            summary: `Accelerates ${formatINR(totalAccelerated)} in immediate customer collections.`
+        },
+        {
+            priority: 3,
+            title: "Freeze 15% Discretionary Marketing & SaaS Spend",
+            impact_inr: totalTrimmed,
+            category: "COST_TRIMMING",
+            summary: `Conserves ${formatINR(totalTrimmed)} in auxiliary operational costs.`
+        }
+    ];
+
+    // Outreach drafts
+    const topDebtor = accelCandidates.length > 0 ? accelCandidates[0] : { source: "Enterprise Client", invoice_amount_inr: 285000, due_date: "15 Nov 2026" };
+    const topVendor = deferrableOutflows.length > 0 ? deferrableOutflows[0] : { recipient: "Hardware & Component Supplier", amount: 155000, due_date: "12 Nov 2026" };
+
+    const emailDraft = {
+        scenario_type: "EARLY_DISCOUNT",
+        recipient: topDebtor.source,
+        amount_inr: topDebtor.invoice_amount_inr,
+        subject: `Special Early Settlement Incentive: Invoice ${topDebtor.source} (${formatINR(topDebtor.invoice_amount_inr)})`,
+        body: `Dear ${topDebtor.source} Accounts Payable Team,\n\nWe hope this email finds you well.\n\nAs part of our mid-quarter treasury optimization, we are pleased to offer an immediate 2% early settlement discount on our pending invoice of ${formatINR(topDebtor.invoice_amount_inr)}.\n\n• Original Due Date: ${topDebtor.due_date}\n• Net Payable Amount: ${formatINR(topDebtor.invoice_amount_inr * 0.98)} (Saving ${formatINR(topDebtor.invoice_amount_inr * 0.02)})\n• Valid If Remitted By: 5 Days from today via UPI / NEFT.\n\nPlease remit directly to our registered bank account to claim the rebate.\n\nWarm regards,\nFinance & Treasury Team`
+    };
+
+    const vendorDraft = {
+        scenario_type: "VENDOR_DEFERRAL",
+        recipient: topVendor.recipient,
+        amount_inr: topVendor.amount,
+        subject: `Scheduled Billing Alignment & Payment Schedule Update - ${topVendor.recipient}`,
+        body: `Dear ${topVendor.recipient} Finance & Billing Team,\n\nWe greatly value our ongoing business relationship with your organization.\n\nWe are conducting our standard monthly reconciliation across vendor disbursements. In accordance with our contractual 14-day payment flexibility terms, our invoice of ${formatINR(topVendor.amount)} (originally scheduled for ${topVendor.due_date}) has been scheduled for disbursement in 14 days.\n\nAll banking and invoice parameters remain unchanged, ensuring prompt clearance.\n\nThank you for your partnership and cooperation.\n\nWarm regards,\nAccounts Payable & Operations`
+    };
+
+    // Collaborative Trace
+    const trace = [
+        {
+            step_number: 1,
+            thought: "AuditorAgent scanned 30-day cash timeline against ₹1,50,000 buffer.",
+            tool_name: "analyze_liquidity_risk",
+            tool_output: { lowest_balance: lowestBal, is_breached: isBreach, deficit: deficit }
+        },
+        {
+            step_number: 2,
+            thought: `ReceivablesAgent identified ${accelCandidates.length} large invoice(s) qualifying for dynamic 2% discounting.`,
+            tool_name: "evaluate_early_settlement",
+            tool_output: { total_accelerated: totalAccelerated, candidates: accelCandidates.length }
+        },
+        {
+            step_number: 3,
+            thought: `PayablesAgent isolated ₹${totalDeferred.toLocaleString('en-IN')} in deferrable supplier disbursements and formulated 14-day grace window.`,
+            tool_name: "reschedule_vendor_bills",
+            tool_output: { total_deferred: totalDeferred }
+        },
+        {
+            step_number: 4,
+            thought: "CFO Synthesizer unified all agent findings into Master Working Capital Roadmap.",
+            tool_name: "synthesize_liquidity_plan",
+            tool_output: { combined_relief: totalRelief, restored: improvedLowest >= buffer }
+        }
+    ];
+
+    return {
+        total_cash_relief_inr: totalRelief,
+        original_lowest_balance_inr: lowestBal,
+        optimized_lowest_balance_inr: improvedLowest,
+        safety_buffer_inr: buffer,
+        is_buffer_restored: improvedLowest >= buffer,
+        executive_summary: `Executing this multi-agent action plan unlocks ${formatINR(totalRelief)} in combined liquidity relief, raising your projected cash floor from ${formatINR(lowestBal)} to ${formatINR(improvedLowest)} (${improvedLowest >= buffer ? 'safely restoring' : 'reinforcing'} the ${formatINR(buffer)} safety buffer).`,
+        master_actions: actions,
+        communication_artifacts: [emailDraft, vendorDraft],
+        agent_results: [
+            { agent_name: "AuditorAgent", trace: [trace[0]], summary: `Detected lowest point ${formatINR(lowestBal)}.` },
+            { agent_name: "ReceivablesAgent", trace: [trace[1]], summary: `Unlocked ${formatINR(totalAccelerated)} via early settlement.` },
+            { agent_name: "PayablesAgent", trace: [trace[2]], summary: `Preserved ${formatINR(totalDeferred)} via vendor rescheduling.` },
+            { agent_name: "CFOAgent", trace: [trace[3]], summary: `Master roadmap compiled successfully.` }
+        ]
+    };
+}
+
+// Render Multi-Agent Report onto War Room UI
+function renderAgentResults(report) {
+    if (!report) return;
+
+    // 1. Executive Summary & Relief Badge
+    const reliefBadge = document.getElementById('master-relief-badge');
+    if (reliefBadge) reliefBadge.innerText = `+${formatINR(report.total_cash_relief_inr)} Relief`;
+
+    const summaryText = document.getElementById('agent-summary-text');
+    if (summaryText) summaryText.innerText = report.executive_summary;
+
+    // 2. Master Action Cards
+    const actionsContainer = document.getElementById('master-actions-container');
+    if (actionsContainer && report.master_actions) {
+        actionsContainer.innerHTML = report.master_actions.map(act => `
+            <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500/40 transition flex items-center justify-between gap-3">
+                <div class="flex items-start gap-2.5">
+                    <span class="w-5 h-5 rounded-md bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-mono font-bold text-[10px] shrink-0 mt-0.5">
+                        #${act.priority}
+                    </span>
+                    <div>
+                        <div class="font-bold text-white text-xs">${act.title}</div>
+                        <div class="text-[11px] text-slate-400 mt-0.5">${act.summary}</div>
+                    </div>
+                </div>
+                <div class="text-right shrink-0">
+                    <div class="font-mono font-bold text-emerald-400 text-xs">+${formatINR(act.impact_inr)}</div>
+                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono">${act.category}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 3. Execution Trace Steps
+    const traceContainer = document.getElementById('agent-trace-container');
+    if (traceContainer) {
+        let allTraceSteps = [];
+        if (report.agent_results) {
+            report.agent_results.forEach(agent => {
+                if (agent.trace) {
+                    agent.trace.forEach(t => {
+                        allTraceSteps.push({
+                            agentName: agent.agent_name,
+                            stepNumber: t.step_number,
+                            thought: t.thought,
+                            tool: t.tool_name,
+                            output: t.tool_output
+                        });
+                    });
+                }
+            });
+        }
+
+        if (allTraceSteps.length > 0) {
+            traceContainer.innerHTML = allTraceSteps.map(step => `
+                <div class="p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 text-xs space-y-1">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-indigo-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-gear text-[10px] text-indigo-400"></i> ${step.agentName}
+                        </span>
+                        <span class="font-mono text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-emerald-400">
+                            Tool: ${step.tool || 'reasoning'}
+                        </span>
+                    </div>
+                    <p class="text-slate-300 text-[11px]">${step.thought}</p>
+                </div>
+            `).join('');
+        }
+    }
+
+    // 4. Communication Artifacts
+    currentAgentArtifacts = report.communication_artifacts || [];
+    const countBadge = document.getElementById('drafts-count-badge');
+    if (countBadge) countBadge.innerText = currentAgentArtifacts.length.toString();
+
+    const draftsContainer = document.getElementById('drafts-container');
+    if (draftsContainer && currentAgentArtifacts.length > 0) {
+        draftsContainer.innerHTML = currentAgentArtifacts.map((art, idx) => `
+            <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                    <div class="font-bold text-white flex items-center gap-1.5">
+                        <i class="fa-solid fa-paper-plane text-emerald-400 text-xs"></i>
+                        <span>${art.subject}</span>
+                    </div>
+                    <button onclick="copyLetterToClipboard(this, ${idx})" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold transition flex items-center gap-1">
+                        <i class="fa-solid fa-copy"></i> Copy Letter
+                    </button>
+                </div>
+                <div class="text-[10px] text-slate-400 font-mono">Recipient: <span class="text-slate-200">${art.recipient}</span></div>
+                <div class="p-2.5 rounded-lg bg-slate-950 font-mono text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed border border-slate-850 select-all">
+${art.body}
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+function copyLetterToClipboard(btn, index) {
+    if (!currentAgentArtifacts[index]) return;
+    const letter = currentAgentArtifacts[index];
+    const fullText = `Subject: ${letter.subject}\n\n${letter.body}`;
+
+    navigator.clipboard.writeText(fullText).then(() => {
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="fa-solid fa-check text-emerald-400"></i> Copied!`;
+        showToast("Letter copied to clipboard!");
+        setTimeout(() => { btn.innerHTML = origHtml; }, 2000);
+    }).catch(() => {
+        showToast("Failed to copy automatically.");
+    });
+}
+
+// Interactive CFO Co-Pilot Chat
+async function handleCfoChatSubmit(e) {
+    e.preventDefault();
+    const input = document.getElementById('cfo-chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    input.value = '';
+    appendChatMessage('user', msg);
+
+    const sendBtn = document.getElementById('btn-chat-send');
+    sendBtn.disabled = true;
+
+    // Show temporary typing indicator
+    const typingId = appendChatTyping();
+
+    const provider = localStorage.getItem('cashpulse_ai_provider') || 'local';
+    const apiKey = localStorage.getItem('cashpulse_ai_key') || null;
+
+    try {
+        let reply = null;
+
+        if (!state.isBrowserMode) {
+            try {
+                const res = await fetch('/api/agents/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: msg,
+                        provider: provider,
+                        api_key: apiKey,
+                        history: cfoChatHistory
+                    }),
+                    signal: AbortSignal.timeout(6000)
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    reply = data.reply;
+                }
+            } catch (err) {
+                console.warn("Backend chat failed, using client-side CFO logic", err);
+            }
+        }
+
+        if (!reply) {
+            // Client-side intelligent CFO heuristic reasoning
+            reply = generateClientSideCfoReply(msg);
+        }
+
+        removeChatTyping(typingId);
+        appendChatMessage('cfo', reply);
+        cfoChatHistory.push({ role: 'user', content: msg });
+        cfoChatHistory.push({ role: 'assistant', content: reply });
+
+    } catch (e) {
+        removeChatTyping(typingId);
+        appendChatMessage('cfo', "I apologize, but I encountered an error formulating this financial advice. Please try again.");
+    } finally {
+        sendBtn.disabled = false;
+    }
+}
+
+function sendQuickPrompt(promptText) {
+    const input = document.getElementById('cfo-chat-input');
+    if (input) {
+        input.value = promptText;
+        document.getElementById('btn-chat-send').click();
+    }
+}
+
+function appendChatMessage(sender, text) {
+    const container = document.getElementById('cfo-chat-messages');
+    if (!container) return;
+
+    const isUser = sender === 'user';
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `flex items-start gap-2.5 ${isUser ? 'flex-row-reverse' : ''}`;
+
+    const iconHtml = isUser
+        ? `<div class="w-6 h-6 rounded-md bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] shrink-0 mt-0.5"><i class="fa-solid fa-user"></i></div>`
+        : `<div class="w-6 h-6 rounded-md bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] shrink-0 mt-0.5"><i class="fa-solid fa-user-tie"></i></div>`;
+
+    const bubbleClass = isUser
+        ? `p-2.5 rounded-lg bg-indigo-600/30 border border-indigo-500/30 text-white text-[11px] leading-relaxed max-w-[85%]`
+        : `p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-[11px] leading-relaxed max-w-[85%] whitespace-pre-wrap`;
+
+    msgDiv.innerHTML = `${iconHtml}<div class="${bubbleClass}">${formatChatText(text)}</div>`;
+    container.appendChild(msgDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+function formatChatText(text) {
+    // Simple bolding and bullet formatter
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+}
+
+function appendChatTyping() {
+    const container = document.getElementById('cfo-chat-messages');
+    const id = `typing-${Date.now()}`;
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = "flex items-start gap-2.5";
+    div.innerHTML = `
+        <div class="w-6 h-6 rounded-md bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+            <i class="fa-solid fa-user-tie"></i>
+        </div>
+        <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 text-[11px] flex items-center gap-1.5">
+            <i class="fa-solid fa-circle fa-beat text-[6px]"></i>
+            <i class="fa-solid fa-circle fa-beat text-[6px]" style="animation-delay: 0.2s"></i>
+            <i class="fa-solid fa-circle fa-beat text-[6px]" style="animation-delay: 0.4s"></i>
+            <span class="text-[10px] text-slate-500 ml-1">CFO Agent analyzing ledger...</span>
+        </div>
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return id;
+}
+
+function removeChatTyping(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+function clearCfoChat() {
+    cfoChatHistory = [];
+    const container = document.getElementById('cfo-chat-messages');
+    if (container) {
+        container.innerHTML = `
+            <div class="flex items-start gap-2.5">
+                <div class="w-6 h-6 rounded-md bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-[11px] leading-relaxed max-w-[85%]">
+                    Hello! I am your <strong>AI CFO Co-Pilot</strong>. Ask me anything about preserving cash, runway, or upcoming payroll.
+                </div>
+            </div>
+        `;
+    }
+    showToast("Chat cleared");
+}
+
+function generateClientSideCfoReply(msg) {
+    const p = msg.toLowerCase();
+    const cash = state.currentCash;
+    const buffer = state.safetyBuffer;
+    const lowest = state.report ? state.report.projected_lowest_balance : 44000;
+    const runway = state.report ? state.report.runway_months : 2.4;
+
+    if (p.includes('payroll')) {
+        return `**CFO Directive on Payroll Protection (₹ INR):**\n\nCore payroll is strictly essential and should not be delayed. With current bank balance at ${formatINR(cash)}, the upcoming payroll cycle dips your cash to ${formatINR(lowest)}.\n\n**Immediate Non-Debt Strategy:**\n1. Offer a 2% discount to your top enterprise client to accelerate ~₹2,79,300 before payroll day.\n2. Exercise 14-day vendor terms on hardware & component bills (saving ₹1,55,000 during the squeeze).\n3. Temporarily freeze non-essential ad spend (+₹8,100 savings).`;
+    }
+    if (p.includes('accelerate') || p.includes('invoice') || p.includes('debtor') || p.includes('client')) {
+        return `**CFO Receivables Acceleration Strategy (₹ INR):**\n\n1. Target the largest delayed invoice (Enterprise SaaS Contract for ₹2,85,000).\n2. Dispatch our 2/10 Net 30 early discount offer from the War Room. For a minor ₹5,700 concession, you unlock ₹2,79,300 in immediate liquidity.\n3. For smaller invoices (<₹1,00,000), send direct UPI payment links to expedite NEFT approval cycles.`;
+    }
+    if (p.includes('runway') || p.includes('burn') || p.includes('health') || p.includes('lowest')) {
+        return `**Working Capital & Runway Briefing:**\n\n• **Current Bank Balance:** ${formatINR(cash)}\n• **Minimum Safety Buffer:** ${formatINR(buffer)}\n• **Projected 30-Day Lowest Point:** ${formatINR(lowest)}\n• **Estimated Operational Runway:** ${runway} Months\n\n**CFO Verdict:** Activating multi-agent vendor staggering and receivables discounting elevates your cash floor safely above the buffer and extends runway by ~1.2 months.`;
+    }
+
+    return `**Executive CFO Advisory (₹ INR):**\n\nBased on your ledger (${formatINR(cash)} current cash vs ${formatINR(buffer)} target buffer):\n\n1. **Vendor Rescheduling:** Shift flexible hardware and supplier payments by 14 days to bridge the low cash trough.\n2. **Inflow Incentive:** A 2% discount incentive pulls forward large enterprise collections.\n3. **Runway Defense:** Run the Multi-Agent Team in the War Room above to inspect all automated tool actions.`;
+}
+

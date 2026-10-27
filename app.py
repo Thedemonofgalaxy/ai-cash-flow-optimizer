@@ -30,6 +30,12 @@ from optimizer import (
     get_default_inflows,
     get_default_outflows
 )
+from agent_framework import (
+    CashFlowAgentOrchestrator,
+    LLMClient,
+    GLOBAL_TOOL_REGISTRY
+)
+from agent_framework.orchestrator import MultiAgentOptimizationReport
 
 app = FastAPI(
     title="AI Cash Flow Optimizer",
@@ -133,6 +139,68 @@ def update_balance(req: UpdateBalanceRequest):
         "current_cash": current_balance,
         "safety_buffer": safety_buffer
     }
+
+class AgentOptimizeRequest(BaseModel):
+    provider: Optional[str] = "auto"
+    model: Optional[str] = "gpt-4o-mini"
+    api_key: Optional[str] = None
+    custom_cash: Optional[float] = None
+    custom_buffer: Optional[float] = None
+
+class AgentChatRequest(BaseModel):
+    message: str
+    history: Optional[List[dict]] = None
+    provider: Optional[str] = "auto"
+    model: Optional[str] = "gpt-4o-mini"
+    api_key: Optional[str] = None
+
+@app.get("/api/agents/tools", tags=["Agentic AI"])
+def get_agent_tools():
+    """List all registered agentic tools and schemas."""
+    return {
+        "count": len(GLOBAL_TOOL_REGISTRY.list_tools()),
+        "tools": GLOBAL_TOOL_REGISTRY.to_schemas()
+    }
+
+@app.post("/api/agents/optimize", response_model=MultiAgentOptimizationReport, tags=["Agentic AI"])
+def run_agentic_optimization(req: Optional[AgentOptimizeRequest] = None):
+    """Triggers the full collaborative multi-agent optimization pipeline."""
+    req = req or AgentOptimizeRequest()
+    cash = req.custom_cash if req.custom_cash is not None else current_balance
+    buffer = req.custom_buffer if req.custom_buffer is not None else safety_buffer
+
+    llm = LLMClient(provider=req.provider or "auto", model=req.model or "gpt-4o-mini", api_key=req.api_key)
+    orchestrator = CashFlowAgentOrchestrator(llm_client=llm)
+
+    inflow_dicts = [inf.model_dump() for inf in stored_inflows]
+    outflow_dicts = [out.model_dump() for out in stored_outflows]
+
+    report = orchestrator.run_team_optimization(
+        current_cash=cash,
+        safety_buffer=buffer,
+        inflows=inflow_dicts,
+        outflows=outflow_dicts
+    )
+    return report
+
+@app.post("/api/agents/chat", tags=["Agentic AI"])
+def chat_with_cfo(req: AgentChatRequest):
+    """Interactive consultation with the CFO Synthesizer Co-Pilot."""
+    llm = LLMClient(provider=req.provider or "auto", model=req.model or "gpt-4o-mini", api_key=req.api_key)
+    orchestrator = CashFlowAgentOrchestrator(llm_client=llm)
+
+    inflow_dicts = [inf.model_dump() for inf in stored_inflows]
+    outflow_dicts = [out.model_dump() for out in stored_outflows]
+
+    result = orchestrator.chat_with_cfo(
+        message=req.message,
+        current_cash=current_balance,
+        safety_buffer=safety_buffer,
+        inflows=inflow_dicts,
+        outflows=outflow_dicts,
+        history=req.history
+    )
+    return result
 
 # AWS Lambda / Serverless Mangum handler
 handler = Mangum(app)
