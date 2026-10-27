@@ -39,7 +39,7 @@ Many growing startups, freelancers, and businesses are **profitable on paper, bu
 
 | Feature | Description |
 | :--- | :--- |
-| **30-Day Liquidity Horizon** | Projects daily rolling bank balance against a configurable safety reserve buffer (e.g., $15,000). |
+| **30-Day Liquidity Horizon** | Projects daily rolling bank balance against a configurable safety reserve buffer (e.g., ₹1,50,000). |
 | **Shortfall Sentinel** | Pinpoints the exact calendar day cash falls below the safety buffer or risks overdraft. |
 | **AI Optimization Levers** | Automatically recommends dynamic early-payment discounts (2/10 Net 30), vendor payment smoothing, and discretionary spending freezes. |
 | **Interactive "What-If" Sandbox** | Live toggles and sliders to simulate client delays, bill deferrals, and immediate cash trajectory shifts. |

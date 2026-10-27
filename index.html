@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CashPulse AI - Minimalist Cash Flow Optimizer</title>
+    <title>CashPulse AI - Minimalist Cash Flow Optimizer (₹ INR)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -30,40 +30,47 @@
 </head>
 <body class="bg-darkbg text-slate-100 min-h-screen flex flex-col selection:bg-emerald-500 selection:text-white">
 
+    <!-- Toast Notification Container -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform -translate-y-16 opacity-0 transition-all duration-300 pointer-events-none px-4 py-2.5 rounded-xl bg-slate-900 border border-emerald-500 text-emerald-400 font-semibold text-xs shadow-2xl flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-msg">Action completed</span>
+    </div>
+
     <!-- Top Minimalist Navigation Bar -->
     <header class="border-b border-slate-800/80 bg-[#080c14]/90 backdrop-blur sticky top-0 z-40">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-base shadow-lg shadow-emerald-500/10">
-                    <i class="fa-solid fa-bolt-lightning"></i>
+                    <i class="fa-solid fa-indian-rupee-sign"></i>
                 </div>
                 <div>
                     <div class="flex items-center space-x-2">
                         <span class="font-extrabold text-base tracking-tight text-white">CashPulse AI</span>
-                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">Optimizer v1.0</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">₹ INR Edition</span>
                     </div>
-                    <p class="text-[11px] text-slate-400">Intelligent Working Capital & Liquidity Forecaster</p>
+                    <p class="text-[11px] text-slate-400">AI-Powered Working Capital & Cash Flow Forecaster</p>
                 </div>
             </div>
 
-            <!-- Health Grade & Actions -->
-            <div class="flex items-center space-x-3">
-                <div id="health-badge" class="flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
-                    <span class="text-slate-400">Health Score:</span>
+            <!-- Health Grade & Action Buttons -->
+            <div class="flex items-center space-x-2.5">
+                <div id="health-badge" class="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+                    <span class="text-slate-400">Cash Health:</span>
                     <span id="health-score-val" class="font-mono font-bold text-emerald-400">--/100</span>
                     <span id="health-grade-val" class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-black">A</span>
                 </div>
 
-                <div id="mode-badge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-400">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span id="mode-text">Live Web Demo</span>
-                </div>
-
-                <button onclick="openTransactionModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-plus text-slate-400"></i> Add Entry
+                <!-- Prominent Edit Cash Balance Button -->
+                <button onclick="openBalanceModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 transition flex items-center gap-1.5 shadow-sm" title="Edit starting bank balance & safety buffer">
+                    <i class="fa-solid fa-pen-to-square text-amber-400"></i> Edit Cash
                 </button>
 
-                <button onclick="resetDefaults()" title="Reset sample transactions" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 text-xs transition">
+                <!-- Prominent Add Entry Button -->
+                <button onclick="openTransactionModal()" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-emerald-600/20">
+                    <i class="fa-solid fa-plus"></i> Add Entry
+                </button>
+
+                <button onclick="resetDefaults()" title="Reset to default ₹ INR sample scenario" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 text-xs transition">
                     <i class="fa-solid fa-rotate-right"></i>
                 </button>
             </div>
@@ -73,34 +80,37 @@
     <!-- Main Container -->
     <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full space-y-6">
 
-        <!-- Shortfall Alert Banner (shows if overdraft predicted) -->
+        <!-- Shortfall Alert Banner -->
         <div id="shortfall-alert-banner" class="hidden rounded-xl border border-rose-500/30 bg-rose-950/40 p-4 text-rose-200 flex items-start justify-between">
             <div class="flex items-start gap-3">
                 <div class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
                 <div>
-                    <div class="font-bold text-sm" id="shortfall-title">Liquidity Crunch Warning</div>
-                    <div class="text-xs text-rose-300 mt-0.5" id="shortfall-desc">Projected cash balance drops below the $15,000 safety threshold in 11 days.</div>
+                    <div class="font-bold text-sm" id="shortfall-title">Liquidity Crunch Warning (₹ INR)</div>
+                    <div class="text-xs text-rose-300 mt-0.5" id="shortfall-desc">Projected cash balance drops below the safety buffer.</div>
                 </div>
             </div>
-            <button onclick="applyAllOptimizations()" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shrink-0">
+            <button onclick="applyAllOptimizations()" class="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shrink-0 shadow-lg shadow-rose-600/30">
                 AI Auto-Resolve
             </button>
         </div>
 
         <!-- 4 Hero KPI Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
             <!-- Card 1: Current Cash -->
-            <div class="card-minimal p-5">
+            <div class="card-minimal p-5 relative overflow-hidden group cursor-pointer" onclick="openBalanceModal()" title="Click to edit current cash balance">
                 <div class="flex items-center justify-between text-xs font-medium text-slate-400">
-                    <span>Current Cash Balance</span>
-                    <button onclick="openBalanceModal()" class="text-[10px] text-slate-500 hover:text-emerald-400 underline">Edit</button>
+                    <span>Current Cash in Bank</span>
+                    <span class="text-[11px] text-amber-400 group-hover:underline flex items-center gap-1 font-semibold">
+                        <i class="fa-solid fa-pen text-[10px]"></i> Edit
+                    </span>
                 </div>
-                <div class="mt-2 text-2xl font-bold font-mono text-white" id="kpi-current-cash">$0</div>
+                <div class="mt-2 text-2xl font-bold font-mono text-white" id="kpi-current-cash">₹0</div>
                 <div class="mt-2 text-xs text-slate-400 flex items-center justify-between">
                     <span>Safety Buffer:</span>
-                    <span id="kpi-safety-buffer" class="font-mono text-slate-300">$15,000</span>
+                    <span id="kpi-safety-buffer" class="font-mono text-slate-300">₹1,50,000</span>
                 </div>
             </div>
 
@@ -110,7 +120,7 @@
                     <span>30-Day Lowest Point</span>
                     <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400" id="kpi-lowest-date">Day --</span>
                 </div>
-                <div class="mt-2 text-2xl font-bold font-mono" id="kpi-lowest-cash">$0</div>
+                <div class="mt-2 text-2xl font-bold font-mono" id="kpi-lowest-cash">₹0</div>
                 <div class="mt-2 text-xs text-slate-400 flex items-center justify-between">
                     <span>Safety Margin:</span>
                     <span id="kpi-margin-text" class="font-semibold text-emerald-400">Nominal</span>
@@ -123,10 +133,10 @@
                     <span>Net 30-Day Flow</span>
                     <span class="text-[10px] text-slate-500">In vs Out</span>
                 </div>
-                <div class="mt-2 text-2xl font-bold font-mono" id="kpi-net-flow">$0</div>
+                <div class="mt-2 text-2xl font-bold font-mono" id="kpi-net-flow">₹0</div>
                 <div class="mt-2 text-xs text-slate-400 flex items-center justify-between">
-                    <span class="text-emerald-400">In: <span id="kpi-total-in">$0</span></span>
-                    <span class="text-rose-400">Out: <span id="kpi-total-out">$0</span></span>
+                    <span class="text-emerald-400">In: <span id="kpi-total-in">₹0</span></span>
+                    <span class="text-rose-400">Out: <span id="kpi-total-out">₹0</span></span>
                 </div>
             </div>
 
@@ -139,7 +149,7 @@
                 <div class="mt-2 text-2xl font-bold font-mono text-emerald-400" id="kpi-runway">0.0 Mo</div>
                 <div class="mt-2 text-xs text-slate-400 flex items-center justify-between">
                     <span>Est. Burn Rate:</span>
-                    <span id="kpi-burn-rate" class="font-mono text-slate-300">$0/mo</span>
+                    <span id="kpi-burn-rate" class="font-mono text-slate-300">₹0/mo</span>
                 </div>
             </div>
         </div>
@@ -153,7 +163,7 @@
                     <div class="flex items-center justify-between mb-2">
                         <div>
                             <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                                <i class="fa-solid fa-chart-line text-emerald-400"></i> 30-Day Cash Liquidity Horizon
+                                <i class="fa-solid fa-chart-line text-emerald-400"></i> 30-Day Cash Liquidity Horizon (₹)
                             </h3>
                             <p class="text-xs text-slate-400">Comparing scheduled baseline vs. AI-optimized trajectory</p>
                         </div>
@@ -175,7 +185,7 @@
                 <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
                     <span class="flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full bg-amber-400/80"></span>
-                        Yellow dashed line represents your Minimum Safety Buffer ($15,000)
+                        Yellow dashed line represents your Minimum Safety Buffer (<span id="chart-buffer-lbl">₹1,50,000</span>)
                     </span>
                     <button onclick="toggleAllScenarios()" id="btn-toggle-all" class="text-xs font-semibold text-emerald-400 hover:text-emerald-300">
                         Enable Full AI Optimization &rarr;
@@ -201,7 +211,7 @@
                                 <span class="text-xs font-semibold text-slate-200">2% Early-Pay Incentive</span>
                                 <input type="checkbox" id="scen-early-pay" onchange="runSimulation()" class="rounded bg-slate-800 border-slate-700 text-emerald-500 focus:ring-0 cursor-pointer">
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-1">Accelerates large invoice payments by ~7 days (unlocks +$27,930 cash early).</p>
+                            <p class="text-[11px] text-slate-400 mt-1">Accelerates large invoice payments by ~7 days (unlocks +₹2,79,300 cash early).</p>
                         </div>
 
                         <!-- Toggle 2: Defer Vendor Payments -->
@@ -219,7 +229,7 @@
                                 <span class="text-xs font-semibold text-slate-200">Trim Discretionary (-15%)</span>
                                 <input type="checkbox" id="scen-trim-costs" onchange="runSimulation()" class="rounded bg-slate-800 border-slate-700 text-emerald-500 focus:ring-0 cursor-pointer">
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-1">Reduces non-essential ad spend and unused SaaS subscriptions.</p>
+                            <p class="text-[11px] text-slate-400 mt-1">Reduces non-essential ad spend and optional subscriptions.</p>
                         </div>
 
                         <!-- Slider: Client Delay Stress Test -->
@@ -231,7 +241,7 @@
                             <input type="range" id="scen-delay-slider" min="0" max="25" value="0" oninput="updateDelaySlider(this.value)" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
                             <div class="flex justify-between text-[10px] text-slate-500 mt-1">
                                 <span>On Time (0d)</span>
-                                <span>Severely Late (+25d)</span>
+                                <span>Late (+25d)</span>
                             </div>
                         </div>
                     </div>
@@ -239,7 +249,7 @@
 
                 <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
                     <span class="text-slate-400">Total Optimization Impact:</span>
-                    <span id="optimization-impact-delta" class="font-mono font-bold text-emerald-400">+$0</span>
+                    <span id="optimization-impact-delta" class="font-mono font-bold text-emerald-400">+₹0</span>
                 </div>
             </div>
         </div>
@@ -273,7 +283,9 @@
                         </h3>
                         <p class="text-xs text-slate-400">Scheduled receivables & payables over 30 days</p>
                     </div>
-                    <button onclick="openTransactionModal()" class="text-xs text-emerald-400 hover:text-emerald-300 font-semibold">+ Add Entry</button>
+                    <button onclick="openTransactionModal()" class="px-2.5 py-1 rounded-md bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition flex items-center gap-1">
+                        <i class="fa-solid fa-plus text-[10px]"></i> Add Entry
+                    </button>
                 </div>
 
                 <div id="ledger-container" class="space-y-2.5 max-h-96 overflow-y-auto pr-1 text-xs">
@@ -283,38 +295,43 @@
         </div>
     </main>
 
-    <!-- Modal: Add Inflow / Outflow Entry -->
-    <div id="modal-transaction" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <!-- Modal 1: Add Inflow / Outflow Entry -->
+    <div id="modal-transaction" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
         <div class="bg-cardbg border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 class="text-base font-bold text-white">Add Cash Flow Entry</h3>
-                <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-emerald-400"></i> Add Cash Flow Entry (₹ INR)
+                </h3>
+                <button type="button" onclick="closeTransactionModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <form onsubmit="handleCreateTransaction(event)" class="space-y-3 text-xs">
+            <form id="form-transaction" onsubmit="handleCreateTransaction(event)" class="space-y-3.5 text-xs">
                 <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Type</label>
+                    <label class="block text-slate-300 font-semibold mb-1">Transaction Type</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <label class="flex items-center justify-center p-2 rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-emerald-500">
+                        <label class="flex items-center justify-center p-2.5 rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-emerald-500 transition">
                             <input type="radio" name="tx-type" value="INFLOW" checked class="mr-2 text-emerald-500 focus:ring-0">
-                            <span>Income (Inflow)</span>
+                            <span class="font-bold text-emerald-400">+ Income (Inflow)</span>
                         </label>
-                        <label class="flex items-center justify-center p-2 rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-rose-500">
+                        <label class="flex items-center justify-center p-2.5 rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-rose-500 transition">
                             <input type="radio" name="tx-type" value="OUTFLOW" class="mr-2 text-rose-500 focus:ring-0">
-                            <span>Expense (Outflow)</span>
+                            <span class="font-bold text-rose-400">- Expense (Outflow)</span>
                         </label>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Description / Partner</label>
-                    <input type="text" id="tx-name" required placeholder="e.g. Client Milestone 2" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-emerald-500">
+                    <label class="block text-slate-300 font-semibold mb-1">Description / Client / Vendor Name</label>
+                    <input type="text" id="tx-name" required placeholder="e.g. Client Milestone Payment or Office Rent" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-emerald-500">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Amount ($)</label>
-                        <input type="number" step="0.01" id="tx-amount" min="1" required placeholder="5000" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-emerald-500 font-mono">
+                        <label class="block text-slate-300 font-semibold mb-1">Amount (₹ INR)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-slate-400 font-bold">₹</span>
+                            <input type="number" step="1" id="tx-amount" min="1" required placeholder="50000" class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2.5 text-slate-200 focus:outline-none focus:border-emerald-500 font-mono font-bold">
+                        </div>
                     </div>
                     <div>
                         <label class="block text-slate-300 font-semibold mb-1">Due Date</label>
@@ -322,35 +339,66 @@
                     </div>
                 </div>
 
-                <div class="pt-3 flex justify-end gap-2">
-                    <button type="button" onclick="closeTransactionModal()" class="px-3.5 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Cancel</button>
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition">Save to Optimizer</button>
+                <!-- Quick Amount Presets -->
+                <div>
+                    <span class="text-[10px] text-slate-400 font-semibold mb-1 block">Quick Presets:</span>
+                    <div class="flex gap-1.5 flex-wrap">
+                        <button type="button" onclick="setTxAmount(10000)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-mono">₹10,000</button>
+                        <button type="button" onclick="setTxAmount(50000)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-mono">₹50,000</button>
+                        <button type="button" onclick="setTxAmount(100000)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-mono">₹1 Lakh</button>
+                        <button type="button" onclick="setTxAmount(250000)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-mono">₹2.5 Lakh</button>
+                    </div>
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-800">
+                    <button type="button" onclick="closeTransactionModal()" class="px-3.5 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-md shadow-emerald-600/30 flex items-center gap-1.5">
+                        <i class="fa-solid fa-check"></i> Add Entry
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal: Edit Current Balance & Safety Buffer -->
-    <div id="modal-balance" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <!-- Modal 2: Edit Current Balance & Safety Buffer -->
+    <div id="modal-balance" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
         <div class="bg-cardbg border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 class="text-base font-bold text-white">Adjust Cash Reserves</h3>
-                <button onclick="closeBalanceModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-amber-400"></i> Adjust Cash Reserves (₹ INR)
+                </h3>
+                <button type="button" onclick="closeBalanceModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <form onsubmit="handleUpdateBalance(event)" class="space-y-3 text-xs">
+            <form onsubmit="handleUpdateBalance(event)" class="space-y-3.5 text-xs">
                 <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Current Cash in Bank ($)</label>
-                    <input type="number" step="100" id="input-current-cash" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 font-mono">
-                </div>
-                <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Target Safety Buffer ($)</label>
-                    <input type="number" step="100" id="input-safety-buffer" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 font-mono">
+                    <label class="block text-slate-300 font-semibold mb-1">Current Bank Balance (₹ INR)</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2.5 text-slate-400 font-bold">₹</span>
+                        <input type="number" step="1000" id="input-current-cash" required class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2.5 text-slate-200 font-mono font-bold focus:outline-none focus:border-amber-400">
+                    </div>
+                    <div class="flex gap-1 mt-1.5 flex-wrap">
+                        <button type="button" onclick="setCashBalancePreset(100000)" class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 hover:text-white">₹1 Lakh</button>
+                        <button type="button" onclick="setCashBalancePreset(380000)" class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 hover:text-white">₹3.8 Lakh</button>
+                        <button type="button" onclick="setCashBalancePreset(500000)" class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 hover:text-white">₹5 Lakh</button>
+                        <button type="button" onclick="setCashBalancePreset(1000000)" class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 hover:text-white">₹10 Lakh</button>
+                    </div>
                 </div>
 
-                <div class="pt-3 flex justify-end gap-2">
-                    <button type="button" onclick="closeBalanceModal()" class="px-3.5 py-2 rounded-lg bg-slate-800 text-slate-300">Cancel</button>
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold">Update</button>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Target Safety Buffer (₹ INR)</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2.5 text-slate-400 font-bold">₹</span>
+                        <input type="number" step="1000" id="input-safety-buffer" required class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2.5 text-slate-200 font-mono font-bold focus:outline-none focus:border-amber-400">
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1">Minimum safety reserve before triggering shortfall alerts.</p>
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-800">
+                    <button type="button" onclick="closeBalanceModal()" class="px-3.5 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-md shadow-emerald-600/30 flex items-center gap-1.5">
+                        <i class="fa-solid fa-check"></i> Save Changes
+                    </button>
                 </div>
             </form>
         </div>
@@ -360,10 +408,10 @@
     <footer class="border-t border-slate-800 py-4 bg-[#080c14] text-center text-xs text-slate-500">
         <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
             <div>
-                <span class="font-bold text-slate-400">CashPulse AI</span> • Minimalist Working Capital & Cash Flow Optimization
+                <span class="font-bold text-slate-400">CashPulse AI</span> • Minimalist Working Capital & Cash Flow Optimization (₹ INR)
             </div>
             <div>
-                Designed for startups, freelancers, and small enterprises.
+                Optimized for Indian startups, SMBs, freelancers, and businesses.
             </div>
         </div>
     </footer>

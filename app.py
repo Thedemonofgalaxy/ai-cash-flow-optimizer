@@ -45,10 +45,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory storage with default realistic data
+# In-memory storage with default realistic data (Rupees ₹)
 base_date = datetime.now()
-current_balance = 38000.0
-safety_buffer = 15000.0
+current_balance = 380000.0
+safety_buffer = 150000.0
 stored_inflows = get_default_inflows(base_date)
 stored_outflows = get_default_outflows(base_date)
 

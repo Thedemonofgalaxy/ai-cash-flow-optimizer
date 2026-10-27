@@ -1,5 +1,5 @@
 """
-AI Cash Flow Optimizer - Core Simulation & Recommendation Engine
+AI Cash Flow Optimizer - Core Simulation & Recommendation Engine (Indian Rupee ₹ Edition)
 """
 
 from datetime import datetime, timedelta
@@ -17,8 +17,8 @@ def get_default_inflows(base_date: datetime) -> List[CashInflow]:
     return [
         CashInflow(
             id="INF-01",
-            source="Enterprise SaaS Annual Contract (Acme Corp)",
-            amount=28500.0,
+            source="Enterprise SaaS Annual Contract (Acme India)",
+            amount=285000.0,
             due_date=(base_date + timedelta(days=12)).strftime("%Y-%m-%d"),
             expected_delay_days=5,
             reliability_score=0.88,
@@ -26,8 +26,8 @@ def get_default_inflows(base_date: datetime) -> List[CashInflow]:
         ),
         CashInflow(
             id="INF-02",
-            source="Monthly Retainer Invoices (Design & Advisory)",
-            amount=14200.0,
+            source="Monthly Retainer Invoices (Tech Advisory)",
+            amount=142000.0,
             due_date=(base_date + timedelta(days=5)).strftime("%Y-%m-%d"),
             expected_delay_days=2,
             reliability_score=0.95,
@@ -36,8 +36,8 @@ def get_default_inflows(base_date: datetime) -> List[CashInflow]:
         ),
         CashInflow(
             id="INF-03",
-            source="Product Licensing Milestone Payment (FinTech Ltd)",
-            amount=18000.0,
+            source="Product Licensing Milestone (FinTech Solutions)",
+            amount=180000.0,
             due_date=(base_date + timedelta(days=22)).strftime("%Y-%m-%d"),
             expected_delay_days=8,
             reliability_score=0.75,
@@ -45,8 +45,8 @@ def get_default_inflows(base_date: datetime) -> List[CashInflow]:
         ),
         CashInflow(
             id="INF-04",
-            source="Direct Stripe Online Marketplace Sales",
-            amount=9800.0,
+            source="Direct Razorpay / UPI Online Marketplace Sales",
+            amount=98000.0,
             due_date=(base_date + timedelta(days=15)).strftime("%Y-%m-%d"),
             expected_delay_days=0,
             reliability_score=0.99,
@@ -60,7 +60,7 @@ def get_default_outflows(base_date: datetime) -> List[CashOutflow]:
         CashOutflow(
             id="OUT-01",
             recipient="Core Team & Engineering Payroll",
-            amount=36000.0,
+            amount=360000.0,
             due_date=(base_date + timedelta(days=10)).strftime("%Y-%m-%d"),
             category="Payroll",
             is_essential=True,
@@ -69,8 +69,8 @@ def get_default_outflows(base_date: datetime) -> List[CashOutflow]:
         ),
         CashOutflow(
             id="OUT-02",
-            recipient="Cloud Infrastructure & Hosting (AWS / Vercel)",
-            amount=4200.0,
+            recipient="Cloud Infrastructure & Hosting (AWS India)",
+            amount=42000.0,
             due_date=(base_date + timedelta(days=7)).strftime("%Y-%m-%d"),
             category="SaaS",
             is_essential=True,
@@ -80,7 +80,7 @@ def get_default_outflows(base_date: datetime) -> List[CashOutflow]:
         CashOutflow(
             id="OUT-03",
             recipient="Office Lease & Physical Utilities",
-            amount=8500.0,
+            amount=85000.0,
             due_date=(base_date + timedelta(days=14)).strftime("%Y-%m-%d"),
             category="Rent",
             is_essential=True,
@@ -89,8 +89,8 @@ def get_default_outflows(base_date: datetime) -> List[CashOutflow]:
         ),
         CashOutflow(
             id="OUT-04",
-            recipient="Hardware Supply & Manufacturing Vendor",
-            amount=15500.0,
+            recipient="Hardware Supply & Component Vendor",
+            amount=155000.0,
             due_date=(base_date + timedelta(days=9)).strftime("%Y-%m-%d"),
             category="Supplier",
             is_essential=False,
@@ -99,8 +99,8 @@ def get_default_outflows(base_date: datetime) -> List[CashOutflow]:
         ),
         CashOutflow(
             id="OUT-05",
-            recipient="Quarterly Corporate Tax Estimate",
-            amount=6200.0,
+            recipient="Quarterly Advance Corporate Tax / GST",
+            amount=62000.0,
             due_date=(base_date + timedelta(days=20)).strftime("%Y-%m-%d"),
             category="Taxes",
             is_essential=True,
@@ -109,8 +109,8 @@ def get_default_outflows(base_date: datetime) -> List[CashOutflow]:
         ),
         CashOutflow(
             id="OUT-06",
-            recipient="Performance Marketing & Ad Spend",
-            amount=5400.0,
+            recipient="Performance Marketing & Digital Ads",
+            amount=54000.0,
             due_date=(base_date + timedelta(days=8)).strftime("%Y-%m-%d"),
             category="Marketing",
             is_essential=False,
@@ -120,7 +120,7 @@ def get_default_outflows(base_date: datetime) -> List[CashOutflow]:
     ]
 
 class CashFlowOptimizerEngine:
-    def __init__(self, current_cash: float = 38000.0, safety_buffer: float = 15000.0):
+    def __init__(self, current_cash: float = 380000.0, safety_buffer: float = 150000.0):
         self.current_cash = current_cash
         self.safety_buffer = safety_buffer
 
@@ -140,17 +140,15 @@ class CashFlowOptimizerEngine:
         inflow_by_date: Dict[str, float] = {}
         for inf in inflows:
             due = datetime.strptime(inf.due_date, "%Y-%m-%d")
-            # Apply scenario logic
             delay = inf.expected_delay_days + scenario.custom_inflow_delay_days
-            if scenario.apply_early_discount and inf.amount >= 15000:
-                # Early payment discount pulls date 7 days earlier with 2% discount
+            if scenario.apply_early_discount and inf.amount >= 150000:
                 actual_date = due - timedelta(days=5)
                 amt = inf.amount * 0.98
             else:
                 actual_date = due + timedelta(days=delay)
+                amt = inf.amount
 
             d_str = actual_date.strftime("%Y-%m-%d")
-            amt = inf.amount * (0.98 if (scenario.apply_early_discount and inf.amount >= 15000) else 1.0)
             inflow_by_date[d_str] = inflow_by_date.get(d_str, 0.0) + amt
 
         outflow_by_date: Dict[str, float] = {}
@@ -158,11 +156,9 @@ class CashFlowOptimizerEngine:
             due = datetime.strptime(out.due_date, "%Y-%m-%d")
             amt = out.amount
 
-            # If scenario trims discretionary expenses
             if scenario.trim_discretionary and not out.is_essential:
                 amt = amt * 0.85  # 15% reduction
 
-            # If scenario defers vendor bills
             if scenario.defer_vendor_payments and out.can_defer_days > 0:
                 actual_date = due + timedelta(days=out.can_defer_days)
             else:
@@ -218,17 +214,14 @@ class CashFlowOptimizerEngine:
         total_outflow = sum(o.amount for o in outflows)
         net_flow = total_inflow - total_outflow
 
-        # Estimate monthly burn rate based on essential recurring outflows
         essential_outflows = sum(o.amount for o in outflows if o.is_essential)
-        burn_rate = max(1.0, total_outflow - total_inflow if total_outflow > total_inflow else essential_outflows * 0.4)
+        burn_rate = max(1000.0, total_outflow - total_inflow if total_outflow > total_inflow else essential_outflows * 0.4)
         runway_months = round(max(0.1, self.current_cash / burn_rate), 1)
 
-        # 2. AI Recommendation Generation
+        # 2. AI Recommendation Generation (₹ INR)
         recommendations: List[AIOptimizationRecommendation] = []
 
-        # Check for cash crunch or buffer breach
         if lowest_balance < self.safety_buffer:
-            # Rec 1: Defer flexible supplier payments
             flexible_outflows = [o for o in outflows if o.can_defer_days >= 7]
             if flexible_outflows:
                 total_deferrable = sum(o.amount for o in flexible_outflows)
@@ -237,7 +230,7 @@ class CashFlowOptimizerEngine:
                     category="OUTFLOW_DEFERRAL",
                     title="Reschedule Flexible Vendor Payments (+14 Days)",
                     description=(
-                        f"Hardware and marketing invoices totaling ${total_deferrable:,.0f} "
+                        f"Hardware and marketing invoices totaling ₹{total_deferrable:,.0f} "
                         f"fall right before payroll. Exercising graceful 14-day terms pushes bills past the low-liquidity dip."
                     ),
                     action="Shift flexible supplier bills by 14 days",
@@ -246,8 +239,7 @@ class CashFlowOptimizerEngine:
                     confidence_score=0.96
                 ))
 
-            # Rec 2: Early payment discount on large invoice
-            large_invoices = [i for i in inflows if i.amount >= 15000]
+            large_invoices = [i for i in inflows if i.amount >= 150000]
             if large_invoices:
                 target = large_invoices[0]
                 accelerated_cash = target.amount * 0.98
@@ -256,8 +248,8 @@ class CashFlowOptimizerEngine:
                     category="INFLOW_ACCELERATION",
                     title=f"Offer 2% Early-Settlement Incentive to {target.source[:20]}...",
                     description=(
-                        f"Invoice of ${target.amount:,.0f} has an expected delay of {target.expected_delay_days} days. "
-                        f"Offering a 2/10 Net 30 discount unlocks ${accelerated_cash:,.0f} up to 7 days earlier, avoiding the overdraft zone."
+                        f"Invoice of ₹{target.amount:,.0f} has an expected delay of {target.expected_delay_days} days. "
+                        f"Offering a 2/10 Net 30 discount unlocks ₹{accelerated_cash:,.0f} up to 7 days earlier, avoiding the overdraft zone."
                     ),
                     action="Send automated dynamic early-payment link",
                     cash_impact=accelerated_cash,
@@ -265,7 +257,6 @@ class CashFlowOptimizerEngine:
                     confidence_score=0.92
                 ))
 
-            # Rec 3: Trim discretionary spend
             discretionary_outflows = [o for o in outflows if not o.is_essential]
             if discretionary_outflows:
                 discretionary_total = sum(o.amount for o in discretionary_outflows)
@@ -275,7 +266,7 @@ class CashFlowOptimizerEngine:
                     category="COST_TRIMMING",
                     title="Pause / Trim Discretionary SaaS & Ad Spend (-15%)",
                     description=(
-                        f"Temporarily optimizing non-essential subscriptions and ad budgets saves ${savings:,.0f}/mo "
+                        f"Temporarily optimizing non-essential subscriptions and ad budgets saves ₹{savings:,.0f}/mo "
                         f"without impacting core operations or payroll."
                     ),
                     action="Enact 15% discretionary freeze",
@@ -284,19 +275,18 @@ class CashFlowOptimizerEngine:
                     confidence_score=0.89
                 ))
         else:
-            # Cash is healthy, offer growth optimization
             recommendations.append(AIOptimizationRecommendation(
                 id="REC-GROWTH",
                 category="BUFFER_MANAGEMENT",
-                title="Deploy Idle Cash into High-Yield Working Capital Reserve",
-                description="Your cash buffer is strong. Consider allocating surplus into an automated overnight yield sweep to earn 4.8% APY.",
+                title="Deploy Idle Cash into High-Yield Liquid Reserve",
+                description="Your cash buffer is strong. Consider allocating surplus cash into an automated liquid debt fund earning 7.2% p.a.",
                 action="Enable automated yield sweep",
-                cash_impact=self.current_cash * 0.048 / 12,
+                cash_impact=self.current_cash * 0.072 / 12,
                 runway_impact_days=30,
                 confidence_score=0.98
             ))
 
-        # 3. Optimized Timeline (Applying full optimization)
+        # 3. Optimized Timeline
         optimized_scenario = OptimizationScenario(
             apply_early_discount=True,
             defer_vendor_payments=True,
@@ -306,8 +296,6 @@ class CashFlowOptimizerEngine:
             inflows, outflows, start_date, days=30, scenario=optimized_scenario
         )
 
-        # 4. Calculate Financial Health Score & Grade
-        # Score factors: Runway (35%), lowest balance vs buffer (35%), inflow/outflow ratio (30%)
         buffer_ratio = max(0.0, min(1.0, lowest_balance / self.safety_buffer if self.safety_buffer > 0 else 1.0))
         runway_factor = min(1.0, runway_months / 6.0)
         flow_ratio = min(1.0, total_inflow / total_outflow if total_outflow > 0 else 1.0)

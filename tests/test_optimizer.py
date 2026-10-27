@@ -30,11 +30,11 @@ def test_engine_baseline_forecast():
     inflows = get_default_inflows(base_date)
     outflows = get_default_outflows(base_date)
 
-    engine = CashFlowOptimizerEngine(current_cash=38000.0, safety_buffer=15000.0)
+    engine = CashFlowOptimizerEngine(current_cash=380000.0, safety_buffer=150000.0)
     report = engine.analyze_and_optimize(inflows, outflows, start_date=base_date)
 
-    assert report.current_cash == 38000.0
-    assert report.minimum_safety_buffer == 15000.0
+    assert report.current_cash == 380000.0
+    assert report.minimum_safety_buffer == 150000.0
     assert len(report.timeline_baseline) == 31  # 30 days + day 0
     assert report.total_30d_inflow > 0
     assert report.total_30d_outflow > 0
@@ -46,7 +46,7 @@ def test_ai_recommendations_trigger_on_crunch():
     outflows = get_default_outflows(base_date)
 
     # Tight cash where buffer is breached
-    engine = CashFlowOptimizerEngine(current_cash=20000.0, safety_buffer=18000.0)
+    engine = CashFlowOptimizerEngine(current_cash=200000.0, safety_buffer=180000.0)
     report = engine.analyze_and_optimize(inflows, outflows, start_date=base_date)
 
     # Verify recommendations are generated
@@ -59,7 +59,7 @@ def test_optimization_scenario_improves_cash_floor():
     inflows = get_default_inflows(base_date)
     outflows = get_default_outflows(base_date)
 
-    engine = CashFlowOptimizerEngine(current_cash=38000.0, safety_buffer=15000.0)
+    engine = CashFlowOptimizerEngine(current_cash=380000.0, safety_buffer=150000.0)
     report = engine.analyze_and_optimize(inflows, outflows, start_date=base_date)
 
     lowest_baseline = report.projected_lowest_balance

@@ -1,11 +1,11 @@
 /**
- * CashPulse AI - Minimalist Cash Flow Optimizer Controller
+ * CashPulse AI - Minimalist Cash Flow Optimizer Controller (Indian Rupee ₹ Edition)
  * Works seamlessly both with Python FastAPI backend and directly in browser (GitHub Pages zero-install)
  */
 
 let state = {
-    currentCash: 38000.0,
-    safetyBuffer: 15000.0,
+    currentCash: 380000.0,
+    safetyBuffer: 150000.0,
     inflows: [],
     outflows: [],
     report: null,
@@ -20,21 +20,30 @@ let state = {
 
 let cashChart = null;
 
-// Initial Seed Data
+// Currency Formatter for Indian Rupees (₹)
+function formatINR(val, includeSymbol = true) {
+    if (isNaN(val) || val === null || val === undefined) return includeSymbol ? "₹0" : "0";
+    const sign = val < 0 ? "-" : "";
+    const absVal = Math.round(Math.abs(val));
+    const formatted = absVal.toLocaleString('en-IN');
+    return (includeSymbol ? (val < 0 ? "-₹" : "₹") : sign) + formatted;
+}
+
+// Initial Seed Data in Indian Rupees (₹)
 const DEFAULT_INFLOWS = [
-    { id: "INF-01", source: "Enterprise SaaS Contract (Acme Corp)", amount: 28500.0, due_date_offset: 12, delay: 5 },
-    { id: "INF-02", source: "Monthly Retainer (Design & Advisory)", amount: 14200.0, due_date_offset: 5, delay: 2 },
-    { id: "INF-03", source: "Licensing Milestone (FinTech Ltd)", amount: 18000.0, due_date_offset: 22, delay: 8 },
-    { id: "INF-04", source: "Online Stripe Marketplace Sales", amount: 9800.0, due_date_offset: 15, delay: 0 }
+    { id: "INF-01", source: "Enterprise SaaS Contract (Acme India)", amount: 285000.0, due_date_offset: 12, delay: 5 },
+    { id: "INF-02", source: "Monthly Retainer (Tech Advisory)", amount: 142000.0, due_date_offset: 5, delay: 2 },
+    { id: "INF-03", source: "Licensing Milestone (FinTech Ltd)", amount: 180000.0, due_date_offset: 22, delay: 8 },
+    { id: "INF-04", source: "Online Razorpay / UPI Marketplace Sales", amount: 98000.0, due_date_offset: 15, delay: 0 }
 ];
 
 const DEFAULT_OUTFLOWS = [
-    { id: "OUT-01", recipient: "Core Team & Engineering Payroll", amount: 36000.0, due_date_offset: 10, category: "Payroll", essential: true, can_defer: 0 },
-    { id: "OUT-02", recipient: "Cloud Infrastructure (AWS / Vercel)", amount: 4200.0, due_date_offset: 7, category: "SaaS", essential: true, can_defer: 7 },
-    { id: "OUT-03", recipient: "Office Lease & Utilities", amount: 8500.0, due_date_offset: 14, category: "Rent", essential: true, can_defer: 3 },
-    { id: "OUT-04", recipient: "Hardware & Manufacturing Supplier", amount: 15500.0, due_date_offset: 9, category: "Supplier", essential: false, can_defer: 14 },
-    { id: "OUT-05", recipient: "Corporate Tax Estimate", amount: 6200.0, due_date_offset: 20, category: "Taxes", essential: true, can_defer: 0 },
-    { id: "OUT-06", recipient: "Performance Marketing & Ads", amount: 5400.0, due_date_offset: 8, category: "Marketing", essential: false, can_defer: 10 }
+    { id: "OUT-01", recipient: "Core Team & Engineering Payroll", amount: 360000.0, due_date_offset: 10, category: "Payroll", essential: true, can_defer: 0 },
+    { id: "OUT-02", recipient: "Cloud Infrastructure (AWS India / Vercel)", amount: 42000.0, due_date_offset: 7, category: "SaaS", essential: true, can_defer: 7 },
+    { id: "OUT-03", recipient: "Office Lease & Utilities", amount: 85000.0, due_date_offset: 14, category: "Rent", essential: true, can_defer: 3 },
+    { id: "OUT-04", recipient: "Hardware & Component Supplier", amount: 155000.0, due_date_offset: 9, category: "Supplier", essential: false, can_defer: 14 },
+    { id: "OUT-05", recipient: "Quarterly Advance Tax / GST", amount: 62000.0, due_date_offset: 20, category: "Taxes", essential: true, can_defer: 0 },
+    { id: "OUT-06", recipient: "Performance Marketing & Digital Ads", amount: 54000.0, due_date_offset: 8, category: "Marketing", essential: false, can_defer: 10 }
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -49,13 +58,11 @@ async function initApp() {
         const res = await fetch('/api/forecast', { signal: AbortSignal.timeout(1500) });
         if (res.ok) {
             state.isBrowserMode = false;
-            document.getElementById('mode-text').innerText = "FastAPI Backend Connected";
         } else {
             state.isBrowserMode = true;
         }
     } catch (e) {
         state.isBrowserMode = true;
-        document.getElementById('mode-text').innerText = "Client AI Engine (GitHub Pages)";
     }
 
     renderForecast();
@@ -64,13 +71,23 @@ async function initApp() {
 function loadLocalStore() {
     const today = new Date();
     
-    const savedCash = localStorage.getItem('cashpulse_currentCash');
-    if (savedCash) state.currentCash = parseFloat(savedCash);
+    const savedCash = localStorage.getItem('cashpulse_currentCash_inr');
+    if (savedCash) {
+        state.currentCash = parseFloat(savedCash);
+    } else {
+        state.currentCash = 380000.0;
+        localStorage.setItem('cashpulse_currentCash_inr', '380000');
+    }
 
-    const savedBuffer = localStorage.getItem('cashpulse_safetyBuffer');
-    if (savedBuffer) state.safetyBuffer = parseFloat(savedBuffer);
+    const savedBuffer = localStorage.getItem('cashpulse_safetyBuffer_inr');
+    if (savedBuffer) {
+        state.safetyBuffer = parseFloat(savedBuffer);
+    } else {
+        state.safetyBuffer = 150000.0;
+        localStorage.setItem('cashpulse_safetyBuffer_inr', '150000');
+    }
 
-    const savedInflows = localStorage.getItem('cashpulse_inflows');
+    const savedInflows = localStorage.getItem('cashpulse_inflows_inr');
     if (savedInflows) {
         state.inflows = JSON.parse(savedInflows);
     } else {
@@ -85,10 +102,10 @@ function loadLocalStore() {
                 delay: i.delay
             };
         });
-        localStorage.setItem('cashpulse_inflows', JSON.stringify(state.inflows));
+        localStorage.setItem('cashpulse_inflows_inr', JSON.stringify(state.inflows));
     }
 
-    const savedOutflows = localStorage.getItem('cashpulse_outflows');
+    const savedOutflows = localStorage.getItem('cashpulse_outflows_inr');
     if (savedOutflows) {
         state.outflows = JSON.parse(savedOutflows);
     } else {
@@ -105,18 +122,17 @@ function loadLocalStore() {
                 can_defer: o.can_defer
             };
         });
-        localStorage.setItem('cashpulse_outflows', JSON.stringify(state.outflows));
+        localStorage.setItem('cashpulse_outflows_inr', JSON.stringify(state.outflows));
     }
 }
 
 // -------------------------------------------------------------
-// Forecast Simulation Engine (Runs in pure JS for zero-install)
+// Forecast Simulation Engine (Pure JS in ₹ INR)
 // -------------------------------------------------------------
 function calculateForecast() {
     const today = new Date();
     const days = 30;
     
-    // Inflow map (Baseline & Optimized)
     function buildInflowMap(isOptimized) {
         const map = {};
         state.inflows.forEach(i => {
@@ -124,8 +140,7 @@ function calculateForecast() {
             let effectiveDate = new Date(due);
             let amt = i.amount;
 
-            if (isOptimized && state.scenario.earlyPay && i.amount >= 15000) {
-                // Early pay pulls 7 days forward, 2% discount
+            if (isOptimized && state.scenario.earlyPay && i.amount >= 150000) {
                 effectiveDate.setDate(due.getDate() - 5);
                 amt = amt * 0.98;
             } else {
@@ -138,7 +153,6 @@ function calculateForecast() {
         return map;
     }
 
-    // Outflow map (Baseline & Optimized)
     function buildOutflowMap(isOptimized) {
         const map = {};
         state.outflows.forEach(o => {
@@ -175,7 +189,7 @@ function calculateForecast() {
         const cur = new Date(today);
         cur.setDate(today.getDate() + d);
         const dateStr = cur.toISOString().split('T')[0];
-        const label = `Day ${d} (${cur.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })})`;
+        const label = `Day ${d}`;
 
         balBase = balBase + (baselineIn[dateStr] || 0) - (baselineOut[dateStr] || 0);
         balOpt = balOpt + (optIn[dateStr] || 0) - (optOut[dateStr] || 0);
@@ -207,7 +221,6 @@ function calculateForecast() {
     const burnRate = Math.max(1000, totalOutflow > totalInflow ? totalOutflow - totalInflow : essentialOut * 0.4);
     const runwayMonths = (state.currentCash / burnRate).toFixed(1);
 
-    // Health Score calculation
     const bufferRatio = Math.max(0, Math.min(1, lowestBase / state.safetyBuffer));
     const runwayFactor = Math.min(1, runwayMonths / 6.0);
     const flowRatio = Math.min(1, totalInflow / totalOutflow);
@@ -244,32 +257,33 @@ function renderForecast() {
     const report = calculateForecast();
     state.report = report;
 
-    // 1. Update Hero Cards
-    document.getElementById('kpi-current-cash').innerText = `$${state.currentCash.toLocaleString()}`;
-    document.getElementById('kpi-safety-buffer').innerText = `$${state.safetyBuffer.toLocaleString()}`;
+    // 1. Update Hero KPI Cards (₹ INR)
+    document.getElementById('kpi-current-cash').innerText = formatINR(state.currentCash);
+    document.getElementById('kpi-safety-buffer').innerText = formatINR(state.safetyBuffer);
+    document.getElementById('chart-buffer-lbl').innerText = formatINR(state.safetyBuffer);
 
     const lowestElem = document.getElementById('kpi-lowest-cash');
-    lowestElem.innerText = `$${report.lowestBase.toLocaleString()}`;
+    lowestElem.innerText = formatINR(report.lowestBase);
     if (report.lowestBase < state.safetyBuffer) {
         lowestElem.className = "mt-2 text-2xl font-bold font-mono text-rose-400";
-        document.getElementById('kpi-margin-text').innerText = `Danger: -$${(state.safetyBuffer - report.lowestBase).toLocaleString()}`;
+        document.getElementById('kpi-margin-text').innerText = `Danger: -${formatINR(state.safetyBuffer - report.lowestBase)}`;
         document.getElementById('kpi-margin-text').className = "font-semibold text-rose-400";
     } else {
         lowestElem.className = "mt-2 text-2xl font-bold font-mono text-emerald-400";
-        document.getElementById('kpi-margin-text').innerText = `Safe: +$${(report.lowestBase - state.safetyBuffer).toLocaleString()}`;
+        document.getElementById('kpi-margin-text').innerText = `Safe: +${formatINR(report.lowestBase - state.safetyBuffer)}`;
         document.getElementById('kpi-margin-text').className = "font-semibold text-emerald-400";
     }
 
     document.getElementById('kpi-lowest-date').innerText = report.lowestBaseDay ? report.lowestBaseDay.date.slice(5) : "--";
 
     const netElem = document.getElementById('kpi-net-flow');
-    netElem.innerText = (report.netFlow >= 0 ? "+$" : "-$") + Math.abs(report.netFlow).toLocaleString();
+    netElem.innerText = (report.netFlow >= 0 ? "+" : "-") + formatINR(Math.abs(report.netFlow));
     netElem.className = `mt-2 text-2xl font-bold font-mono ${report.netFlow >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
 
-    document.getElementById('kpi-total-in').innerText = `$${report.totalInflow.toLocaleString()}`;
-    document.getElementById('kpi-total-out').innerText = `$${report.totalOutflow.toLocaleString()}`;
+    document.getElementById('kpi-total-in').innerText = formatINR(report.totalInflow);
+    document.getElementById('kpi-total-out').innerText = formatINR(report.totalOutflow);
     document.getElementById('kpi-runway').innerText = `${report.runwayMonths} Mo`;
-    document.getElementById('kpi-burn-rate').innerText = `$${Math.round(report.burnRate).toLocaleString()}/mo`;
+    document.getElementById('kpi-burn-rate').innerText = `${formatINR(report.burnRate)}/mo`;
 
     // 2. Health Score
     document.getElementById('health-score-val').innerText = `${report.healthScore}/100`;
@@ -280,17 +294,17 @@ function renderForecast() {
     else if (report.grade === 'C') gradeBadge.className = "px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 text-[10px] font-black";
     else gradeBadge.className = "px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 text-[10px] font-black";
 
-    // 3. Alert Banner
+    // 3. Shortfall Alert Banner
     const banner = document.getElementById('shortfall-alert-banner');
     if (report.lowestBase < state.safetyBuffer) {
         banner.classList.remove('hidden');
         document.getElementById('shortfall-desc').innerText = 
-            `Cash drops to $${report.lowestBase.toLocaleString()} on ${report.lowestBaseDay.date}, breaching your $${state.safetyBuffer.toLocaleString()} safety buffer.`;
+            `Cash drops to ${formatINR(report.lowestBase)} on ${report.lowestBaseDay.date}, breaching your ${formatINR(state.safetyBuffer)} safety reserve buffer.`;
     } else {
         banner.classList.add('hidden');
     }
 
-    // 4. Render Chart
+    // 4. Render Chart (₹ INR)
     renderChart(report.timelineBaseline, report.timelineOptimized);
 
     // 5. Render AI Recommendations & Ledger
@@ -299,7 +313,7 @@ function renderForecast() {
 
     // 6. Impact Delta
     const delta = report.lowestOpt - report.lowestBase;
-    document.getElementById('optimization-impact-delta').innerText = delta > 0 ? `+$${delta.toLocaleString()} cash floor preserved` : `$0`;
+    document.getElementById('optimization-impact-delta').innerText = delta > 0 ? `+${formatINR(delta)} liquidity floor preserved` : `₹0`;
 }
 
 function renderChart(baseline, optimized) {
@@ -334,7 +348,7 @@ function renderChart(baseline, optimized) {
                     tension: 0.3
                 },
                 {
-                    label: 'Safety Buffer ($15k)',
+                    label: `Safety Buffer (${formatINR(state.safetyBuffer)})`,
                     data: bufferLine,
                     borderColor: '#f59e0b',
                     borderDash: [2, 2],
@@ -354,7 +368,7 @@ function renderChart(baseline, optimized) {
                     intersect: false,
                     callbacks: {
                         label: function(context) {
-                            return `${context.dataset.label}: $${context.parsed.y.toLocaleString()}`;
+                            return `${context.dataset.label}: ${formatINR(context.parsed.y)}`;
                         }
                     }
                 }
@@ -369,7 +383,10 @@ function renderChart(baseline, optimized) {
                     ticks: {
                         color: '#64748b',
                         font: { size: 10 },
-                        callback: val => `$${(val / 1000).toFixed(0)}k`
+                        callback: val => {
+                            if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+                            return `₹${(val / 1000).toFixed(0)}k`;
+                        }
                     }
                 }
             }
@@ -386,9 +403,9 @@ function renderRecommendations() {
             id: "rec-1",
             category: "INFLOW ACCELERATION",
             categoryColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-            title: "Offer 2% Early Settlement on Acme Corp Invoice ($28.5k)",
-            desc: "Invoice due on Day 12 averages 5 days late. Offering a 2% early-pay discount pulls cash forward by ~7 days, preventing the Day 11 dip.",
-            impact: "+$27,930 cash unlocked early",
+            title: "Offer 2% Early Settlement on Acme India Invoice (₹2,85,000)",
+            desc: "Invoice due on Day 12 averages 5 days late. Offering a 2% early-settlement incentive pulls ₹2,79,300 cash forward by ~7 days, preventing the Day 11 dip.",
+            impact: "+₹2,79,300 cash unlocked early",
             actionKey: "earlyPay"
         },
         {
@@ -396,8 +413,8 @@ function renderRecommendations() {
             category: "OUTFLOW DEFERRAL",
             categoryColor: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
             title: "Shift Hardware Supplier Payment (+14 Days)",
-            desc: "Vendor payment of $15,500 is due on Day 9 right before payroll. Utilizing standard 14-day grace terms pushes this outflow safely past payroll.",
-            impact: "+$15,500 liquidity retained over payroll",
+            desc: "Vendor payment of ₹1,55,000 is due on Day 9 right before payroll. Utilizing standard 14-day grace terms pushes this outflow safely past payroll.",
+            impact: "+₹1,55,000 liquidity retained over payroll",
             actionKey: "deferVendor"
         },
         {
@@ -405,8 +422,8 @@ function renderRecommendations() {
             category: "DISCRETIONARY TRIMMING",
             categoryColor: "bg-amber-500/10 text-amber-400 border-amber-500/20",
             title: "Trim Non-Essential Ad Spend & Optional SaaS (-15%)",
-            desc: "Temporarily trimming ad campaigns and pausing unassigned SaaS seats saves cash without impacting core customer operations.",
-            impact: "+$1,620 monthly savings",
+            desc: "Temporarily trimming ad campaigns and pausing unassigned software seats saves cash without impacting core business operations.",
+            impact: "+₹16,200 monthly savings",
             actionKey: "trimCosts"
         }
     ];
@@ -441,6 +458,11 @@ function renderLedger() {
 
     items.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+    if (items.length === 0) {
+        container.innerHTML = `<div class="text-slate-500 text-center py-6 italic">No transactions scheduled. Click "Add Entry" above!</div>`;
+        return;
+    }
+
     container.innerHTML = items.map(item => {
         const isIncome = item.type === 'IN';
         return `
@@ -455,7 +477,7 @@ function renderLedger() {
                     </div>
                 </div>
                 <div class="font-mono font-bold ${isIncome ? 'text-emerald-400' : 'text-slate-300'} text-xs">
-                    ${isIncome ? '+' : '-'}$${item.amount.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                    ${isIncome ? '+' : '-'}${formatINR(item.amount)}
                 </div>
             </div>
         `;
@@ -499,6 +521,7 @@ function applyAllOptimizations() {
     document.getElementById('scen-defer-vendor').checked = true;
     document.getElementById('scen-trim-costs').checked = true;
     renderForecast();
+    showToast("AI Optimization levers applied!");
 }
 
 function toggleAllScenarios() {
@@ -506,33 +529,86 @@ function toggleAllScenarios() {
 }
 
 // -------------------------------------------------------------
-// Modals & Storage Handlers
+// Toast Notifications
+// -------------------------------------------------------------
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    const msgElem = document.getElementById('toast-msg');
+    if (!toast || !msgElem) return;
+
+    msgElem.innerText = msg;
+    toast.classList.remove('-translate-y-16', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+
+    setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('-translate-y-16', 'opacity-0');
+    }, 2800);
+}
+
+// -------------------------------------------------------------
+// Modals & Storage Handlers (Add Entry & Edit Balance)
 // -------------------------------------------------------------
 function openTransactionModal() {
-    document.getElementById('modal-transaction').classList.remove('hidden');
+    const modal = document.getElementById('modal-transaction');
+    modal.classList.remove('hidden');
+
+    // Automatically set default date to today's date YYYY-MM-DD
+    const dateInput = document.getElementById('tx-date');
+    if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+    
+    // Focus on name input
+    const nameInput = document.getElementById('tx-name');
+    if (nameInput) {
+        nameInput.value = '';
+        setTimeout(() => nameInput.focus(), 100);
+    }
+    const amtInput = document.getElementById('tx-amount');
+    if (amtInput) amtInput.value = '';
 }
+
 function closeTransactionModal() {
     document.getElementById('modal-transaction').classList.add('hidden');
 }
 
+function setTxAmount(amt) {
+    const input = document.getElementById('tx-amount');
+    if (input) input.value = amt;
+}
+
 function handleCreateTransaction(e) {
     e.preventDefault();
-    const type = document.querySelector('input[name="tx-type"]:checked').value;
-    const name = document.getElementById('tx-name').value;
-    const amt = parseFloat(document.getElementById('tx-amount').value);
-    const date = document.getElementById('tx-date').value;
+    const typeRadio = document.querySelector('input[name="tx-type"]:checked');
+    const type = typeRadio ? typeRadio.value : 'INFLOW';
+    const name = document.getElementById('tx-name').value.trim();
+    const amtRaw = document.getElementById('tx-amount').value;
+    const amt = parseFloat(amtRaw);
+    let date = document.getElementById('tx-date').value;
+
+    if (!date) {
+        date = new Date().toISOString().split('T')[0];
+    }
+
+    if (!name || isNaN(amt) || amt <= 0) {
+        alert("Please enter a valid description and positive amount.");
+        return;
+    }
 
     if (type === 'INFLOW') {
-        state.inflows.push({
+        const newInflow = {
             id: `INF-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
             source: name,
             amount: amt,
             due_date: date,
             delay: 0
-        });
-        localStorage.setItem('cashpulse_inflows', JSON.stringify(state.inflows));
+        };
+        state.inflows.push(newInflow);
+        localStorage.setItem('cashpulse_inflows_inr', JSON.stringify(state.inflows));
+        showToast(`Added Income: ${name} (${formatINR(amt)})`);
     } else {
-        state.outflows.push({
+        const newOutflow = {
             id: `OUT-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
             recipient: name,
             amount: amt,
@@ -540,8 +616,10 @@ function handleCreateTransaction(e) {
             category: "General",
             essential: true,
             can_defer: 0
-        });
-        localStorage.setItem('cashpulse_outflows', JSON.stringify(state.outflows));
+        };
+        state.outflows.push(newOutflow);
+        localStorage.setItem('cashpulse_outflows_inr', JSON.stringify(state.outflows));
+        showToast(`Added Expense: ${name} (${formatINR(amt)})`);
     }
 
     closeTransactionModal();
@@ -549,32 +627,54 @@ function handleCreateTransaction(e) {
 }
 
 function openBalanceModal() {
-    document.getElementById('input-current-cash').value = state.currentCash;
-    document.getElementById('input-safety-buffer').value = state.safetyBuffer;
-    document.getElementById('modal-balance').classList.remove('hidden');
+    const modal = document.getElementById('modal-balance');
+    modal.classList.remove('hidden');
+
+    const cashInput = document.getElementById('input-current-cash');
+    const bufferInput = document.getElementById('input-safety-buffer');
+
+    if (cashInput) cashInput.value = state.currentCash;
+    if (bufferInput) bufferInput.value = state.safetyBuffer;
+    if (cashInput) setTimeout(() => cashInput.focus(), 100);
 }
+
 function closeBalanceModal() {
     document.getElementById('modal-balance').classList.add('hidden');
 }
 
+function setCashBalancePreset(amt) {
+    const cashInput = document.getElementById('input-current-cash');
+    if (cashInput) cashInput.value = amt;
+}
+
 function handleUpdateBalance(e) {
     e.preventDefault();
-    state.currentCash = parseFloat(document.getElementById('input-current-cash').value);
-    state.safetyBuffer = parseFloat(document.getElementById('input-safety-buffer').value);
-    localStorage.setItem('cashpulse_currentCash', state.currentCash);
-    localStorage.setItem('cashpulse_safetyBuffer', state.safetyBuffer);
+    const newCash = parseFloat(document.getElementById('input-current-cash').value);
+    const newBuffer = parseFloat(document.getElementById('input-safety-buffer').value);
+
+    if (isNaN(newCash) || isNaN(newBuffer) || newCash < 0 || newBuffer < 0) {
+        alert("Please enter valid positive cash and buffer amounts.");
+        return;
+    }
+
+    state.currentCash = newCash;
+    state.safetyBuffer = newBuffer;
+    localStorage.setItem('cashpulse_currentCash_inr', state.currentCash.toString());
+    localStorage.setItem('cashpulse_safetyBuffer_inr', state.safetyBuffer.toString());
+
     closeBalanceModal();
     renderForecast();
+    showToast(`Updated Balance: ${formatINR(state.currentCash)} (Buffer: ${formatINR(state.safetyBuffer)})`);
 }
 
 function resetDefaults() {
-    if (!confirm("Reset to default demonstration cash flow scenario?")) return;
-    localStorage.removeItem('cashpulse_inflows');
-    localStorage.removeItem('cashpulse_outflows');
-    localStorage.removeItem('cashpulse_currentCash');
-    localStorage.removeItem('cashpulse_safetyBuffer');
-    state.currentCash = 38000.0;
-    state.safetyBuffer = 15000.0;
+    if (!confirm("Reset to default demonstration ₹ INR scenario?")) return;
+    localStorage.removeItem('cashpulse_inflows_inr');
+    localStorage.removeItem('cashpulse_outflows_inr');
+    localStorage.removeItem('cashpulse_currentCash_inr');
+    localStorage.removeItem('cashpulse_safetyBuffer_inr');
+    state.currentCash = 380000.0;
+    state.safetyBuffer = 150000.0;
     state.scenario = { earlyPay: false, deferVendor: false, trimCosts: false, delayDays: 0 };
     document.getElementById('scen-early-pay').checked = false;
     document.getElementById('scen-defer-vendor').checked = false;
@@ -583,4 +683,5 @@ function resetDefaults() {
     document.getElementById('delay-val').innerText = "+0 days";
     loadLocalStore();
     renderForecast();
+    showToast("Reset to default ₹ INR cash flow model!");
 }
