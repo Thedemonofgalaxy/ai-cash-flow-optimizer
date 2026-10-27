@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CashPulse AI - Minimalist Cash Flow Optimizer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#080c14',
+                        cardbg: '#0f172a',
+                        cardborder: 'rgba(255, 255, 255, 0.08)',
+                        brand: '#10b981',
+                        accent: '#6366f1'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body class="bg-darkbg text-slate-100 min-h-screen flex flex-col selection:bg-emerald-500 selection:text-white">
+
+    <!-- Top Minimalist Navigation Bar -->
+    <header class="border-b border-slate-800/80 bg-[#080c14]/90 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-base shadow-lg shadow-emerald-500/10">
+                    <i class="fa-solid fa-bolt-lightning"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-extrabold text-base tracking-tight text-white">CashPulse AI</span>
+                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">Optimizer v1.0</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Intelligent Working Capital & Liquidity Forecaster</p>
+                </div>
+            </div>
+
+            <!-- Health Grade & Actions -->
+            <div class="flex items-center space-x-3">
+                <div id="health-badge" class="flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+                    <span class="text-slate-400">Health Score:</span>
+                    <span id="health-score-val" class="font-mono font-bold text-emerald-400">--/100</span>
+                    <span id="health-grade-val" class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-black">A</span>
+                </div>
+
+                <div id="mode-badge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="mode-text">Live Web Demo</span>
+                </div>
+
+                <button onclick="openTransactionModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-plus text-slate-400"></i> Add Entry
+                </button>
+
+                <button onclick="resetDefaults()" title="Reset sample transactions" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 text-xs transition">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full space-y-6">
+
+        <!-- Shortfall Alert Banner (shows if overdraft predicted) -->
+        <div id="shortfall-alert-banner" class="hidden rounded-xl border border-rose-500/30 bg-rose-950/40 p-4 text-rose-200 flex items-start justify-between">
+            <div class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-sm" id="shortfall-title">Liquidity Crunch Warning</div>
+                    <div class="text-xs text-rose-300 mt-0.5" id="shortfall-desc">Projected cash balance drops below the $15,000 safety threshold in 11 days.</div>
+                </div>
+            </div>
+            <button onclick="applyAllOptimizations()" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shrink-0">
+                AI Auto-Resolve
+            </button>
+        </div>
+
+        <!-- 4 Hero KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Card 1: Current Cash -->
+            <div class="card-minimal p-5">
+                <div class="flex items-center justify-between text-xs font-medium text-slate-400">
+                    <span>Current Cash Balance</span>
+                    <button onclick="openBalanceModal()" class="text-[10px] text-slate-500 hover:text-emerald-400 underline">Edit</button>
+                </div>
+                <div class="mt-2 text-2xl font-bold font-mono text-white" id="kpi-current-cash">$0</div>
+                <div class="mt-2 text-xs text-slate-400 flex items-center justify-between">
+                    <span>Safety Buffer:</span>
+                    <span id="kpi-safety-buffer" class="font-mono text-slate-300">$15,000</span>
+                </div>
+            </div>
+
+            <!-- Card 2: Projected Lowest Balance -->
+            <div class="card-minimal p-5">
+                <div class="flex items-center justify-between text-xs font-medium text-slate-400">
+                    <span>30-Day Lowest Point</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400" id="kpi-lowest-date">Day --</span>
+                </div>
+                <div class="mt-2 text-2xl font-bold font-mono" id="kpi-lowest-cash">$0</div>
+                <div class="mt-2 text-xs text-slate-400 flex items-center justify-between">
+                    <span>Safety Margin:</span>
+                    <span id="kpi-margin-text" class="font-semibold text-emerald-400">Nominal</span>
+                </div>
+            </div>
+
+            <!-- Card 3: Net Cash Flow -->
+            <div class="card-minimal p-5">
+                <div class="flex items-center justify-between text-xs font-medium text-slate-400">
+                    <span>Net 30-Day Flow</span>
+                    <span class="text-[10px] text-slate-500">In vs Out</span>
+                </div>
+                <div class="mt-2 text-2xl font-bold font-mono" id="kpi-net-flow">$0</div>
+                <div class="mt-2 text-xs text-slate-400 flex items-center justify-between">
+                    <span class="text-emerald-400">In: <span id="kpi-total-in">$0</span></span>
+                    <span class="text-rose-400">Out: <span id="kpi-total-out">$0</span></span>
+                </div>
+            </div>
+
+            <!-- Card 4: Estimated Runway -->
+            <div class="card-minimal p-5">
+                <div class="flex items-center justify-between text-xs font-medium text-slate-400">
+                    <span>Operational Runway</span>
+                    <i class="fa-solid fa-hourglass-half text-slate-500"></i>
+                </div>
+                <div class="mt-2 text-2xl font-bold font-mono text-emerald-400" id="kpi-runway">0.0 Mo</div>
+                <div class="mt-2 text-xs text-slate-400 flex items-center justify-between">
+                    <span>Est. Burn Rate:</span>
+                    <span id="kpi-burn-rate" class="font-mono text-slate-300">$0/mo</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cash Forecast Chart & What-If Sandbox Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Chart Section (2 columns) -->
+            <div class="lg:col-span-2 card-minimal p-5 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line text-emerald-400"></i> 30-Day Cash Liquidity Horizon
+                            </h3>
+                            <p class="text-xs text-slate-400">Comparing scheduled baseline vs. AI-optimized trajectory</p>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs">
+                            <span class="flex items-center gap-1.5 text-slate-400">
+                                <span class="w-3 h-0.5 bg-rose-400 border border-rose-400 border-dashed inline-block"></span> Baseline
+                            </span>
+                            <span class="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                                <span class="w-3 h-1 bg-emerald-500 inline-block rounded"></span> AI Optimized
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="relative h-64 sm:h-72 w-full mt-4">
+                        <canvas id="cashForecastChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-amber-400/80"></span>
+                        Yellow dashed line represents your Minimum Safety Buffer ($15,000)
+                    </span>
+                    <button onclick="toggleAllScenarios()" id="btn-toggle-all" class="text-xs font-semibold text-emerald-400 hover:text-emerald-300">
+                        Enable Full AI Optimization &rarr;
+                    </button>
+                </div>
+            </div>
+
+            <!-- "What-If" AI Scenario Sandbox (1 column) -->
+            <div class="card-minimal p-5 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-indigo-400"></i> Scenario Sandbox
+                        </h3>
+                        <span class="text-[10px] font-mono text-slate-400">Live Recalculation</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">Toggle optimization levers to observe instant cash balance impact:</p>
+
+                    <div class="space-y-4">
+                        <!-- Toggle 1: Early Payment Discount -->
+                        <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-200">2% Early-Pay Incentive</span>
+                                <input type="checkbox" id="scen-early-pay" onchange="runSimulation()" class="rounded bg-slate-800 border-slate-700 text-emerald-500 focus:ring-0 cursor-pointer">
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">Accelerates large invoice payments by ~7 days (unlocks +$27,930 cash early).</p>
+                        </div>
+
+                        <!-- Toggle 2: Defer Vendor Payments -->
+                        <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-200">Defer Non-Critical Bills (+14d)</span>
+                                <input type="checkbox" id="scen-defer-vendor" onchange="runSimulation()" class="rounded bg-slate-800 border-slate-700 text-emerald-500 focus:ring-0 cursor-pointer">
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">Shifts flexible hardware & vendor bills past payroll day without penalties.</p>
+                        </div>
+
+                        <!-- Toggle 3: Trim Discretionary -->
+                        <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-200">Trim Discretionary (-15%)</span>
+                                <input type="checkbox" id="scen-trim-costs" onchange="runSimulation()" class="rounded bg-slate-800 border-slate-700 text-emerald-500 focus:ring-0 cursor-pointer">
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">Reduces non-essential ad spend and unused SaaS subscriptions.</p>
+                        </div>
+
+                        <!-- Slider: Client Delay Stress Test -->
+                        <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
+                            <div class="flex items-center justify-between text-xs font-semibold text-slate-200 mb-1">
+                                <span>Stress Test: Client Late Days</span>
+                                <span id="delay-val" class="font-mono text-amber-400">+0 days</span>
+                            </div>
+                            <input type="range" id="scen-delay-slider" min="0" max="25" value="0" oninput="updateDelaySlider(this.value)" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                            <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                                <span>On Time (0d)</span>
+                                <span>Severely Late (+25d)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
+                    <span class="text-slate-400">Total Optimization Impact:</span>
+                    <span id="optimization-impact-delta" class="font-mono font-bold text-emerald-400">+$0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Recommendations & Transaction Ledger Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- AI Recommendations Column -->
+            <div class="card-minimal p-5">
+                <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-microchip text-emerald-400"></i> AI Priority Recommendations
+                        </h3>
+                        <p class="text-xs text-slate-400">Ranked by cash impact & working capital relief</p>
+                    </div>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">Smart Sentinel</span>
+                </div>
+
+                <div id="recommendations-container" class="space-y-3">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Scheduled Inflows & Outflows Ledger -->
+            <div class="card-minimal p-5">
+                <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-receipt text-indigo-400"></i> Cash Flow Ledger
+                        </h3>
+                        <p class="text-xs text-slate-400">Scheduled receivables & payables over 30 days</p>
+                    </div>
+                    <button onclick="openTransactionModal()" class="text-xs text-emerald-400 hover:text-emerald-300 font-semibold">+ Add Entry</button>
+                </div>
+
+                <div id="ledger-container" class="space-y-2.5 max-h-96 overflow-y-auto pr-1 text-xs">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Add Inflow / Outflow Entry -->
+    <div id="modal-transaction" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-cardbg border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white">Add Cash Flow Entry</h3>
+                <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form onsubmit="handleCreateTransaction(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Type</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center justify-center p-2 rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-emerald-500">
+                            <input type="radio" name="tx-type" value="INFLOW" checked class="mr-2 text-emerald-500 focus:ring-0">
+                            <span>Income (Inflow)</span>
+                        </label>
+                        <label class="flex items-center justify-center p-2 rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-rose-500">
+                            <input type="radio" name="tx-type" value="OUTFLOW" class="mr-2 text-rose-500 focus:ring-0">
+                            <span>Expense (Outflow)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Description / Partner</label>
+                    <input type="text" id="tx-name" required placeholder="e.g. Client Milestone 2" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Amount ($)</label>
+                        <input type="number" step="0.01" id="tx-amount" min="1" required placeholder="5000" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-emerald-500 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Due Date</label>
+                        <input type="date" id="tx-date" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2">
+                    <button type="button" onclick="closeTransactionModal()" class="px-3.5 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition">Save to Optimizer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Current Balance & Safety Buffer -->
+    <div id="modal-balance" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-cardbg border border-slate-700 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white">Adjust Cash Reserves</h3>
+                <button onclick="closeBalanceModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form onsubmit="handleUpdateBalance(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Current Cash in Bank ($)</label>
+                    <input type="number" step="100" id="input-current-cash" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 font-mono">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Target Safety Buffer ($)</label>
+                    <input type="number" step="100" id="input-safety-buffer" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 font-mono">
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2">
+                    <button type="button" onclick="closeBalanceModal()" class="px-3.5 py-2 rounded-lg bg-slate-800 text-slate-300">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 py-4 bg-[#080c14] text-center text-xs text-slate-500">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div>
+                <span class="font-bold text-slate-400">CashPulse AI</span> • Minimalist Working Capital & Cash Flow Optimization
+            </div>
+            <div>
+                Designed for startups, freelancers, and small enterprises.
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Controller -->
+    <script src="static/js/app.js"></script>
+</body>
+</html>

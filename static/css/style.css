@@ -1,0 +1,62 @@
+/* Minimalist Typography and Styling */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #080c14;
+    color: #f1f5f9;
+}
+
+.font-mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Minimalist Card Design */
+.card-minimal {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.card-minimal:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Subtle glow accents */
+.glow-emerald {
+    box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.25);
+}
+
+.glow-amber {
+    box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.25);
+}
+
+.glow-rose {
+    box-shadow: 0 0 25px -5px rgba(244, 63, 94, 0.25);
+}
+
+/* Switch styling */
+.toggle-checkbox:checked {
+    right: 0;
+    border-color: #10b981;
+}
+.toggle-checkbox:checked + .toggle-label {
+    background-color: #10b981;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+::-webkit-scrollbar-track {
+    background: #080c14;
+}
+::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+}

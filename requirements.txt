@@ -1,0 +1,7 @@
+# CashPulse AI - Minimal Dependencies
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+pydantic>=2.6.0
+mangum>=0.17.0
+pytest>=8.0.0
+httpx>=0.27.0
